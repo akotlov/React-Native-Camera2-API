@@ -14,9 +14,13 @@ import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.nativeview.R;
 
+
 public class Camera2Manager extends SimpleViewManager<RelativeLayout> {
     public static final String REACT_CLASS = "Camera2";
     private static final String TAG = "Camera2VideoFragment";
+
+    private static final int COMMAND_RECORD = 559;
+    private static final int COMMAND_STOP = 365;
 
     @Override
     public String getName() {
@@ -41,6 +45,7 @@ public class Camera2Manager extends SimpleViewManager<RelativeLayout> {
         fragmentTransaction.commit();
 
         return view;*/
+
 
         // Requesting all the permissions in the manifest
         PermissionsManager.getInstance().requestAllManifestPermissionsIfNecessary(context.getCurrentActivity(), new PermissionsResultAction() {
@@ -78,4 +83,41 @@ public class Camera2Manager extends SimpleViewManager<RelativeLayout> {
         // Set properties from React onto your native component
         // https://facebook.github.io/react-native/docs/native-components-android.html#3-expose-view-property-setters-using-reactprop-or-reactpropgroup-annotation
     }
+
+    /*
+    @Override
+    public @Nullable
+    Map getExportedCustomDirectEventTypeConstants() {
+        return MapBuilder.of(
+                "recordingStart", MapBuilder.of("registrationName", "onRecordingStarted"),
+                "recordingFinish", MapBuilder.of("registrationName", "onRecordingFinished"),
+                "cameraAccessException", MapBuilder.of("registrationName", "onCameraAccessException"),
+                "cameraFailed", MapBuilder.of("registrationName", "cameraFailed")
+        );
+    }
+
+    @Override
+    public Map<String, Integer> getCommandsMap() {
+        return MapBuilder.of(
+                "record", COMMAND_RECORD,
+                "stop", COMMAND_STOP
+        );
+    }
+
+    @Override
+    public void receiveCommand(
+            RelativeLayout view,
+            int commandType,
+            @Nullable ReadableArray args
+    ) {
+        Assertions.assertNotNull(view);
+
+        switch (commandType) {
+            case COMMAND_RECORD:
+                view.record();
+                break;
+            case COMMAND_STOP:
+                view.stop();
+        }
+    }*/
 }
