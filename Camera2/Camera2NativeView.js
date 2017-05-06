@@ -16,3 +16,18 @@ Camera2View.propTypes = {
 }
 
 export default Camera2View
+
+
+
+/*import { PropTypes } from 'react';  
+import { requireNativeComponent, View } from 'react-native';
+
+var iface = {  
+    name: 'Camera2View',
+    PropTypes: {
+          exampleProp: PropTypes.string,
+          ...View.propTypes // include the default view properties
+    }
+}
+
+module.exports = requireNativeComponent('Camera2', iface); */

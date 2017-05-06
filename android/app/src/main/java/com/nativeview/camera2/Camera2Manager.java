@@ -35,7 +35,9 @@ public class Camera2Manager extends SimpleViewManager<RelativeLayout> {
 
         RelativeLayout view = new RelativeLayout(context);
 
-        view.setId(View.generateViewId());
+        //view.setId(View.generateViewId());
+
+        //A Fragment must always be embedded in an Activity.
 
         /*FragmentManager fragmentManager = context.getCurrentActivity().getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -45,7 +47,6 @@ public class Camera2Manager extends SimpleViewManager<RelativeLayout> {
         fragmentTransaction.commit();
 
         return view;*/
-
 
         // Requesting all the permissions in the manifest
         PermissionsManager.getInstance().requestAllManifestPermissionsIfNecessary(context.getCurrentActivity(), new PermissionsResultAction() {

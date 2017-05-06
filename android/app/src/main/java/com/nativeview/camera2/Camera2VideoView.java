@@ -201,6 +201,7 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
     };
 
 
+
     /**
      * In this sample, we choose a video size with 3x4 aspect ratio. Also, we don't use sizes
      * larger than 1080p, since MediaRecorder cannot handle such a high-resolution video.
@@ -249,9 +250,6 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
             return choices[0];
         }
     }
-
-
-
 
 
 
@@ -315,6 +313,11 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
 
 
 
+
+
+
+
+
     /**
      * Starts a background thread and its {@link Handler}.
      */
@@ -359,6 +362,7 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
 
             // Choose the sizes for camera preview and video recording
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+
             StreamConfigurationMap map = characteristics
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));

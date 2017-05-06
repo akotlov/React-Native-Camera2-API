@@ -18,33 +18,14 @@ import {
 import  { ViewPagerScrollState } from 'ViewPagerAndroid';
 
 import Camera2View from './Camera2/Camera2NativeView'
+import TestView from './Test/TestNativeView'
 
 export default class NativeView extends Component {
   render() {
     return (
       <View style={styles.container}>
-      <ViewPagerAndroid
-          style={styles.viewPager}
-          initialPage={0}
-          pageMargin={0}
-          keyboardDismissMode={'on-drag'}
-          ref={viewPager => { this.viewPager = viewPager; }}>
-      
-       <View style={styles.containerOne}>
-         <TouchableOpacity style={styles.topButton}>
-                    <Button onPress={() => {}} title='One' style={{}} />
-            </TouchableOpacity>
-         </View>
-
-          <View style={styles.containerTwo}>
-          <TouchableOpacity style={styles.topButton}>
-                    <Button onPress={() => {}} title='Two' style={{}} />
-            </TouchableOpacity>
-            </View>
-            <View style={styles.containerTwo}>
-             
-            </View>
-      </ViewPagerAndroid>
+          <Button onPress={() => {}} title='Button' style={{flex: 1}} />
+          <TestView style={{flex: 1}}/>
       </View>
     );
   }
@@ -94,3 +75,33 @@ AppRegistry.registerComponent('NativeView', () => NativeView);
 /*
         <Camera2View style={styles.preview}/>
 */
+
+
+
+/*
+
+<ViewPagerAndroid
+          style={styles.viewPager}
+          initialPage={2}
+          pageMargin={0}
+          keyboardDismissMode={'on-drag'}
+          ref={viewPager => { this.viewPager = viewPager; }}>
+      
+       <View style={styles.containerOne}>
+         <TouchableOpacity style={styles.topButton}>
+                    <Button onPress={() => {}} title='One' style={{}} />
+            </TouchableOpacity>
+         </View>
+
+          <View style={styles.containerTwo}>
+          <TouchableOpacity style={styles.topButton}>
+                    <Button onPress={() => {}} title='Two' style={{}} />
+            </TouchableOpacity>
+            </View>
+            <View style={styles.containerTwo}>
+             <TestView />
+            </View>
+      </ViewPagerAndroid>
+
+      */
+
