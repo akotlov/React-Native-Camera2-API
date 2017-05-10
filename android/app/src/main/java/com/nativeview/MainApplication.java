@@ -9,6 +9,7 @@ import com.facebook.react.shell.MainReactPackage;
 import com.facebook.soloader.SoLoader;
 import com.nativeview.camera2.Camera2Package;
 import com.nativeview.testpackage.TestPackage;
+import com.nativeview.videorecorder.VideoRecorderPackage;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +27,8 @@ public class MainApplication extends Application implements ReactApplication {
       return Arrays.<ReactPackage>asList(
               new MainReactPackage(),
               new Camera2Package(),
-              new TestPackage()
+              new TestPackage(),
+              new VideoRecorderPackage()
       );
     }
   };

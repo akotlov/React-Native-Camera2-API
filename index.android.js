@@ -15,17 +15,21 @@ import {
   ViewPagerAndroid
 } from 'react-native';
 
-import  { ViewPagerScrollState } from 'ViewPagerAndroid';
+import { ViewPagerScrollState } from 'ViewPagerAndroid';
 
 import Camera2View from './Camera2/Camera2NativeView'
 import TestView from './Test/TestNativeView'
+import VideoRecorderView from './VideoRecorder/VideoRecorder'
 
 export default class NativeView extends Component {
   render() {
     return (
       <View style={styles.container}>
-          <Button onPress={() => {}} title='Button' style={{flex: 1}} />
-          <TestView style={{flex: 1}}/>
+
+       
+                <Camera2View style={{ flex: 1 }} />
+    
+
       </View>
     );
   }
@@ -56,12 +60,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-   containerOne: {
+  containerOne: {
     //flex: 1,
     //backgroundColor: 'grey',
   },
   containerTwo: {
-    //flex: 1,
+    flex: 1,
     //backgroundColor: 'green',
   },
   viewPager: {
@@ -102,6 +106,11 @@ AppRegistry.registerComponent('NativeView', () => NativeView);
              <TestView />
             </View>
       </ViewPagerAndroid>
+
+
+
+                        <Button onPress={() => {}} title='Button' style={{flex: 1}} />
+
 
       */
 

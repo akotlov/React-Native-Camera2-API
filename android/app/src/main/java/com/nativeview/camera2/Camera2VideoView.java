@@ -2,12 +2,7 @@ package com.nativeview.camera2;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.graphics.Matrix;
 import android.graphics.RectF;
@@ -21,7 +16,6 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaRecorder;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -32,8 +26,8 @@ import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.nativeview.R;
@@ -49,15 +43,41 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by admin on 5/2/17.
- */
-public class Camera2VideoView extends Fragment implements View.OnClickListener {
+
+public class Camera2VideoView extends RelativeLayout implements View.OnClickListener {
+
+
+    public static final String TAG = "Camera2VideoView";
+
+    private Activity mActivity;
+
+    private void inflateLayout(Context context) {
+        LayoutInflater layoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View view = layoutInflater.inflate(R.layout.main, this);
+
+        mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        mButtonVideo = (Button) view.findViewById(R.id.video);
+        mButtonVideo.setOnClickListener(this);
+
+        Log.d(TAG, "inflateLayout");
+        /*startBackgroundThread();
+        if (mTextureView.isAvailable()) {
+            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+        } else {
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+        }*/
+
+    }
+
+    public Camera2VideoView(Context context, Activity activity) {
+        super(context);
+        mActivity = activity;
+        Log.d(TAG, "constructor");
+        inflateLayout(context);
+    }
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
-    private static final String TAG = "Camera2VideoView";
-    private static final String FRAGMENT_DIALOG = "dialog";
 
     private File videoFile;
 
@@ -192,13 +212,14 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
-            Activity activity = getActivity();
-            if (null != activity) {
-                activity.finish();
+            //Activity activity = getActivity();
+            if (null != mActivity) {
+                mActivity.finish();
             }
         }
 
     };
+
 
 
 
@@ -253,12 +274,12 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
 
 
 
-
-
+    //Inherited from Fragment class.
+    /*
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.main, container, false);
+        return inflater.inflate(R.layout.fragment_camera2_video, container, false);
     }
 
     @Override
@@ -286,6 +307,26 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
         super.onPause();
     }
 
+    */
+
+     public void onResume() {
+         Log.d(TAG, "onResume()");
+         startBackgroundThread();
+        if (mTextureView.isAvailable()) {
+            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+        } else {
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+        }
+    }
+
+     public void onPause() {
+         Log.d(TAG, "onPause()");
+         closeCamera();
+         stopBackgroundThread();
+    }
+
+
+
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -297,22 +338,8 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
                 }
                 break;
             }
-            case R.id.info: {
-                Activity activity = getActivity();
-                if (null != activity) {
-                    new AlertDialog.Builder(activity)
-                            .setMessage(R.string.intro_message)
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
-                }
-                break;
-            }
         }
     }
-
-
-
-
 
 
 
@@ -348,11 +375,11 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
      */
     private void openCamera(int width, int height) {
 
-        final Activity activity = getActivity();
-        if (null == activity || activity.isFinishing()) {
+        //final Activity activity = getActivity();
+        if (null == mActivity || mActivity.isFinishing()) {
             return;
         }
-        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+        CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
         try {
             Log.d(TAG, "tryAcquire");
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
@@ -362,7 +389,6 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
 
             // Choose the sizes for camera preview and video recording
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-
             StreamConfigurationMap map = characteristics
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
@@ -379,13 +405,14 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
             mMediaRecorder = new MediaRecorder();
             manager.openCamera(cameraId, mStateCallback, null);
         } catch (CameraAccessException e) {
-            Toast.makeText(activity, "Cannot access the camera.", Toast.LENGTH_SHORT).show();
-            activity.finish();
+            Toast.makeText(mActivity, "Cannot access the camera.", Toast.LENGTH_SHORT).show();
+            mActivity.finish();
         } catch (NullPointerException e) {
             // Currently an NPE is thrown when the Camera2API is used but not supported on the
             // device this code runs.
-            ErrorDialog.newInstance(getString(R.string.camera_error))
-                    .show(getChildFragmentManager(), FRAGMENT_DIALOG);
+
+            /*ErrorDialog.newInstance(getString(R.string.camera_error))
+                    .show(getChildFragmentManager(), FRAGMENT_DIALOG);*/
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera opening.");
         }
@@ -442,9 +469,9 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
 
                 @Override
                 public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
-                    Activity activity = getActivity();
-                    if (null != activity) {
-                        Toast.makeText(activity, "Failed", Toast.LENGTH_SHORT).show();
+                    //Activity activity = getActivity();
+                    if (null != mActivity) {
+                        Toast.makeText(mActivity, "Failed", Toast.LENGTH_SHORT).show();
                     }
                 }
             }, mBackgroundHandler);
@@ -485,11 +512,11 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
      * @param viewHeight The height of `mTextureView`
      */
     private void configureTransform(int viewWidth, int viewHeight) {
-        Activity activity = getActivity();
-        if (null == mTextureView || null == mPreviewSize || null == activity) {
+        //Activity activity = getActivity();
+        if (null == mTextureView || null == mPreviewSize || null == mActivity) {
             return;
         }
-        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        int rotation = mActivity.getWindowManager().getDefaultDisplay().getRotation();
         Matrix matrix = new Matrix();
         RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
         RectF bufferRect = new RectF(0, 0, mPreviewSize.getHeight(), mPreviewSize.getWidth());
@@ -508,8 +535,8 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
     }
 
     private void setUpMediaRecorder() throws IOException {
-        final Activity activity = getActivity();
-        if (null == activity) {
+        //final Activity activity = getActivity();
+        if (null == mActivity) {
             return;
         }
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -524,7 +551,7 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
 
 
 
-        Log.d(TAG, "recording");
+        Log.d(TAG, "setUpMediaRecorder");
         mMediaRecorder.setVideoEncodingBitRate(5000000);//orig value 10 000 000
         //mMediaRecorder.setAudioChannels(1);
         mMediaRecorder.setVideoFrameRate(30);
@@ -562,7 +589,7 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
         Log.d("test","videoFrameRate= " +  profile.videoFrameRate);
         Log.d("test","videoFrameWidth= " +  profile.videoFrameWidth);*/
 
-        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        int rotation = mActivity.getWindowManager().getDefaultDisplay().getRotation();
         int orientation = ORIENTATIONS.get(rotation);
         mMediaRecorder.setOrientationHint(orientation);
         mMediaRecorder.prepare();
@@ -627,38 +654,5 @@ public class Camera2VideoView extends Fragment implements View.OnClickListener {
         }
 
     }
-
-
-    public static class ErrorDialog extends DialogFragment {
-
-        private static final String ARG_MESSAGE = "message";
-
-        public static ErrorDialog newInstance(String message) {
-            ErrorDialog dialog = new ErrorDialog();
-            Bundle args = new Bundle();
-            args.putString(ARG_MESSAGE, message);
-            dialog.setArguments(args);
-            return dialog;
-        }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Activity activity = getActivity();
-            return new AlertDialog.Builder(activity)
-                    .setMessage(getArguments().getString(ARG_MESSAGE))
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            activity.finish();
-                        }
-                    })
-                    .create();
-        }
-
-    }
-
-
-
-
 
 }

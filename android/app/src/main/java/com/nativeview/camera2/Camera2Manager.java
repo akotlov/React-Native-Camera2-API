@@ -5,49 +5,74 @@ package com.nativeview.camera2;
 import android.Manifest;
 import android.util.Log;
 import android.view.View;
-import android.widget.RelativeLayout;
 
 import com.anthonycr.grant.PermissionsManager;
 import com.anthonycr.grant.PermissionsResultAction;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
-import com.nativeview.R;
 
 
-public class Camera2Manager extends SimpleViewManager<RelativeLayout> {
+public class Camera2Manager extends SimpleViewManager<Camera2VideoView>  {
     public static final String REACT_CLASS = "Camera2";
-    private static final String TAG = "Camera2VideoFragment";
+    private static final String TAG = "Camera2Manager";
 
-    private static final int COMMAND_RECORD = 559;
-    private static final int COMMAND_STOP = 365;
+
+    /*@Override
+    public void onHostResume() {
+        Log.d(TAG, "onHostResume");
+        view.onResume();
+    }
+
+    @Override
+    public void onHostPause() {
+        Log.d(TAG, "onHostPause");
+        view.onPause();
+    }
+
+    @Override
+    public void onHostDestroy() {
+        Log.d(TAG, "onHostDestroy");
+
+    }*/
 
     @Override
     public String getName() {
-        // Tell React the name of the module
-        // https://facebook.github.io/react-native/docs/native-components-android.html#1-create-the-viewmanager-subclass
         return REACT_CLASS;
     }
 
     @Override
-    public RelativeLayout createViewInstance(ThemedReactContext context){
-        // Create a view here
+    public Camera2VideoView createViewInstance(ThemedReactContext context){
 
-        RelativeLayout view = new RelativeLayout(context);
+        final Camera2VideoView view = new Camera2VideoView(context.getBaseContext() , context.getCurrentActivity());
 
-        //view.setId(View.generateViewId());
+        final LifecycleEventListener listener = new LifecycleEventListener() {
+            @Override
+            public void onHostResume() {
+                Log.d(TAG, "onHostResume");
+                view.onResume();
+            }
 
+            @Override
+            public void onHostPause() {
+                Log.d(TAG, "onHostPause");
+                view.onPause();
+            }
+
+            @Override
+            public void onHostDestroy() {
+                Log.d(TAG, "onHostDestroy");
+                /*if (listener != null && context != null) {
+                    context.removeLifecycleEventListener(listener);
+                    listener = null;
+                }*/
+            }
+        };
+        context.addLifecycleEventListener(listener);
+
+        //RelativeLayout view = new RelativeLayout(context);
         //A Fragment must always be embedded in an Activity.
-
-        /*FragmentManager fragmentManager = context.getCurrentActivity().getFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-        Camera2VideoView fragment = new Camera2VideoView();
-        fragmentTransaction.add(view.getId(), fragment);
-        fragmentTransaction.commit();
-
-        return view;*/
-
         // Requesting all the permissions in the manifest
         PermissionsManager.getInstance().requestAllManifestPermissionsIfNecessary(context.getCurrentActivity(), new PermissionsResultAction() {
             @Override
@@ -69,13 +94,17 @@ public class Camera2Manager extends SimpleViewManager<RelativeLayout> {
         boolean hasPermission = PermissionsManager.getInstance().hasPermission(context.getCurrentActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
         Log.d(TAG, "Has " + Manifest.permission.WRITE_EXTERNAL_STORAGE + " permission: " + hasPermission);
 
-        context.getCurrentActivity().setContentView(R.layout.container);
+        /*context.getCurrentActivity().setContentView(R.layout.container);
 
         context.getCurrentActivity().getFragmentManager().beginTransaction()
                 .replace(R.id.container, new Camera2VideoView())
-                .commit();
+                .commit();*/
 
-        return  view;
+        //context.getBaseContext(); current activity context.
+
+
+        //view.onResume();
+        return view;
 
     }
 
@@ -84,41 +113,28 @@ public class Camera2Manager extends SimpleViewManager<RelativeLayout> {
         // Set properties from React onto your native component
         // https://facebook.github.io/react-native/docs/native-components-android.html#3-expose-view-property-setters-using-reactprop-or-reactpropgroup-annotation
     }
-
-    /*
-    @Override
-    public @Nullable
-    Map getExportedCustomDirectEventTypeConstants() {
-        return MapBuilder.of(
-                "recordingStart", MapBuilder.of("registrationName", "onRecordingStarted"),
-                "recordingFinish", MapBuilder.of("registrationName", "onRecordingFinished"),
-                "cameraAccessException", MapBuilder.of("registrationName", "onCameraAccessException"),
-                "cameraFailed", MapBuilder.of("registrationName", "cameraFailed")
-        );
-    }
-
-    @Override
-    public Map<String, Integer> getCommandsMap() {
-        return MapBuilder.of(
-                "record", COMMAND_RECORD,
-                "stop", COMMAND_STOP
-        );
-    }
-
-    @Override
-    public void receiveCommand(
-            RelativeLayout view,
-            int commandType,
-            @Nullable ReadableArray args
-    ) {
-        Assertions.assertNotNull(view);
-
-        switch (commandType) {
-            case COMMAND_RECORD:
-                view.record();
-                break;
-            case COMMAND_STOP:
-                view.stop();
-        }
-    }*/
 }
+
+
+/*
+from https://github.com/airbnb/react-native-maps/blob/master/lib/android/src/main/java/com/airbnb/android/react/maps/AirMapView.java  LINE:340
+-Maybe to use in onHostDestroy()
+
+public synchronized  void doDestroy() {
+        if (destroyed) {
+            return;
+        }
+        destroyed = true;
+
+        if (lifecycleListener != null && context != null) {
+            context.removeLifecycleEventListener(lifecycleListener);
+            lifecycleListener = null;
+        }
+        if (!paused) {
+            onPause();
+            paused = true;
+        }
+        onDestroy();
+    }
+
+ */
