@@ -19,6 +19,8 @@ import android.media.MediaRecorder;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.design.widget.FloatingActionButton;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -26,10 +28,13 @@ import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
-import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.nativeview.R;
 
 import java.io.File;
@@ -43,43 +48,54 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+//import android.content.Context;
+
 
 public class Camera2VideoView extends RelativeLayout implements View.OnClickListener {
-
 
     public static final String TAG = "Camera2VideoView";
 
     private Activity mActivity;
+    File mediaStorageDir;
+    String mVideoFilePath;
+
+    public Camera2VideoView(Context context, Activity activity) {
+        this(context, null, activity);
+
+    }
+
+    public Camera2VideoView(Context context, AttributeSet attrs, Activity activity) {
+        super(context, attrs);
+        mActivity = activity;
+        Log.d(TAG, "constructor");
+        inflateLayout(context);
+    }
 
     private void inflateLayout(Context context) {
         LayoutInflater layoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View view = layoutInflater.inflate(R.layout.main, this);
 
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
-        mButtonVideo = (Button) view.findViewById(R.id.video);
+        mButtonVideo = (FloatingActionButton) view.findViewById(R.id.video);
         mButtonVideo.setOnClickListener(this);
 
-        Log.d(TAG, "inflateLayout");
-        /*startBackgroundThread();
-        if (mTextureView.isAvailable()) {
-            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
-        } else {
-            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
-        }*/
+        createdMediaDirectory();
 
+        Log.d(TAG, "inflateLayout");
     }
 
-    public Camera2VideoView(Context context, Activity activity) {
-        super(context);
-        mActivity = activity;
-        Log.d(TAG, "constructor");
-        inflateLayout(context);
+    public void onRecordStop(String path) {
+        WritableMap event = Arguments.createMap();
+        event.putString("file", path);
+        Log.d(TAG, event.toString());
+        ReactContext reactContext = (ReactContext)getContext();
+        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+                getId(),
+                "recordingFinish",
+                event);
     }
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-
-
-    private File videoFile;
 
 
     private static final String[] VIDEO_PERMISSIONS = {
@@ -102,7 +118,7 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
     /**
      * Button to record video
      */
-    private Button mButtonVideo;
+    private FloatingActionButton mButtonVideo;
 
     /**
      * A reference to the opened {@link android.hardware.camera2.CameraDevice}.
@@ -114,6 +130,15 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
      * preview.
      */
     private CameraCaptureSession mPreviewSession;
+
+
+    /**
+     * A TextureView's SurfaceTexture can be obtained either by invoking getSurfaceTexture() or by
+     * using a TextureView.SurfaceTextureListener. It is important to know that a SurfaceTexture is
+     * available only after the TextureView is attached to a window (and onAttachedToWindow() has been
+     * invoked.) It is therefore highly recommended you use a listener to be notified when the SurfaceTexture
+     * becomes available.
+     */
 
     /**
      * {@link TextureView.SurfaceTextureListener} handles several lifecycle events on a
@@ -230,9 +255,22 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
      * @param choices The list of available sizes
      * @return The video size
      */
-    private static Size chooseVideoSize(Size[] choices) {
+    /*private static Size chooseVideoSize(Size[] choices) {
         for (Size size : choices) {
             if (size.getWidth() == size.getHeight() * 4 / 3 && size.getWidth() <= 1080) {
+                return size;
+            }
+        }
+        Log.e(TAG, "Couldn't find any suitable video size");
+        return choices[choices.length - 1];
+    }*/
+
+    //Lets get 16 / 9 aspect ratio. from array of all possible resolution available on this camera.
+    private static Size chooseVideoSize(Size[] choices) {
+        for (Size size : choices) {
+            Log.e(TAG, "All sizes: " + size.toString());
+            if (size.getWidth() == size.getHeight() * 4 / 3 && size.getWidth() <= 1080) {
+                Log.e(TAG, size.toString());
                 return size;
             }
         }
@@ -259,6 +297,7 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
         for (Size option : choices) {
             if (option.getHeight() == option.getWidth() * h / w &&
                     option.getWidth() >= width && option.getHeight() >= height) {
+                Log.e(TAG,  "chooseOptimalSize " + option.toString());
                 bigEnough.add(option);
             }
         }
@@ -321,6 +360,7 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
 
      public void onPause() {
          Log.d(TAG, "onPause()");
+         mVideoFilePath = null;
          closeCamera();
          stopBackgroundThread();
     }
@@ -374,6 +414,7 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
      * Tries to open a {@link CameraDevice}. The result is listened by `mStateCallback`.
      */
     private void openCamera(int width, int height) {
+        Log.d(TAG, "openCamera()" + String.valueOf(width) + " x " + String.valueOf(height));
 
         //final Activity activity = getActivity();
         if (null == mActivity || mActivity.isFinishing()) {
@@ -391,7 +432,11 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = characteristics
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
             mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
+
+            //For now ,lets just hardcode 1280x720 preview size.
+            //mVideoSize = new Size(1920, 1080);
             mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
                     width, height, mVideoSize);
 
@@ -511,6 +556,17 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
      * @param viewWidth  The width of `mTextureView`
      * @param viewHeight The height of `mTextureView`
      */
+
+    /* Added this block of code to the method
+    else {
+            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
+            matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
+            float scale = Math.max(
+                    (float) viewHeight / mPreviewSize.getWidth(),
+                    (float) viewWidth / mPreviewSize.getHeight());
+            matrix.postScale(scale, scale, centerX, centerY);
+        }
+     */
     private void configureTransform(int viewWidth, int viewHeight) {
         //Activity activity = getActivity();
         if (null == mTextureView || null == mPreviewSize || null == mActivity) {
@@ -530,6 +586,13 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
                     (float) viewWidth / mPreviewSize.getWidth());
             matrix.postScale(scale, scale, centerX, centerY);
             matrix.postRotate(90 * (rotation - 2), centerX, centerY);
+        }else {
+            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
+            matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
+            float scale = Math.max(
+                    (float) viewHeight / mPreviewSize.getWidth(),
+                    (float) viewWidth / mPreviewSize.getHeight());
+            matrix.postScale(scale, scale, centerX, centerY);
         }
         mTextureView.setTransform(matrix);
     }
@@ -539,6 +602,7 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
         if (null == mActivity) {
             return;
         }
+        Log.d(TAG, "setUpMediaRecorder");
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -546,12 +610,9 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
         //mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         //mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
-        videoFile = getOutputMediaFile();
-        mMediaRecorder.setOutputFile(videoFile.getPath());
+        mVideoFilePath = getOutputMediaFile();
+        mMediaRecorder.setOutputFile(mVideoFilePath);
 
-
-
-        Log.d(TAG, "setUpMediaRecorder");
         mMediaRecorder.setVideoEncodingBitRate(5000000);//orig value 10 000 000
         //mMediaRecorder.setAudioChannels(1);
         mMediaRecorder.setVideoFrameRate(30);
@@ -564,6 +625,7 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
 
         Log.d(TAG, "width is " + width);
         Log.d(TAG, "height is " + height);
+
 
         mMediaRecorder.setVideoSize(1280, 720);
         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
@@ -596,8 +658,9 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
     }
 
     //
-    private File getOutputMediaFile() {
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+
+    private File createdMediaDirectory () {
+        mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), "CameraVideo");
 
         // Create the storage directory if it does not exist
@@ -607,21 +670,32 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
                 return null;
             }
         }
+        Log.e(TAG, "Created :" + mediaStorageDir.getAbsolutePath());
+        return mediaStorageDir;
 
-        // Create a media file name
+    };
+
+    private String getOutputMediaFile() {
+
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        File mediaFile;
-        mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+
+        Log.e(TAG, "created file: " + mediaStorageDir.getAbsolutePath() + "/VID_" + timeStamp + ".mp4");
+
+        return mediaStorageDir.getAbsolutePath() + "/VID_" + timeStamp + ".mp4";
+
+        /*File mediaFile = new File(mediaStorageDir.getPath() + File.separator +
                 "VID_" + timeStamp + ".mp4");
 
-        return mediaFile;
+
+
+        return mediaFile.getPath(); */
     }
     //
 
     private void startRecordingVideo() {
         try {
-            // UI
-            mButtonVideo.setText(R.string.stop);
+
+            //mButtonVideo.setText(R.string.stop);
             mIsRecordingVideo = true;
 
             // Start recording
@@ -634,10 +708,12 @@ public class Camera2VideoView extends RelativeLayout implements View.OnClickList
     private void stopRecordingVideo() {
         // UI
         mIsRecordingVideo = false;
-        mButtonVideo.setText(R.string.record);
+        //mButtonVideo.setText(R.string.record);
         // Stop recording
         mMediaRecorder.stop();
         mMediaRecorder.reset();
+        onRecordStop(mVideoFilePath);
+        mVideoFilePath = null;
         startPreview();
     }
 

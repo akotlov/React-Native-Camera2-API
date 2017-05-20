@@ -3,7 +3,6 @@
 package com.nativeview.videorecorder;
 
 import android.Manifest;
-import android.app.Activity;
 import android.util.Log;
 import android.view.View;
 
@@ -15,44 +14,18 @@ import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
 
 
-public class VideoRecorderManager extends SimpleViewManager<VideoRecorderBase> implements LifecycleEventListener {
+public class VideoRecorderManager extends SimpleViewManager<VideoRecorderBase>  {
     public static final String REACT_CLASS = "VideoRecorder";
     private static final String TAG = "VideoRecorder";
 
-    private Activity mActivity;
-    private VideoRecorderBase mView;
-
-    public VideoRecorderManager(Activity activity) {
-        mActivity = activity;
-    }
-
-    @Override
-    public void onHostResume() {
-        mView.onResume();
-    }
-
-    @Override
-    public void onHostPause() {
-        mView.onPause();
-    }
-
-    @Override
-    public void onHostDestroy() {
-
-    }
-
     @Override
     public String getName() {
-        // Tell React the name of the module
         return REACT_CLASS;
     }
 
     @Override
     public VideoRecorderBase createViewInstance(ThemedReactContext context){
 
-        //A Fragment must always be embedded in an Activity.
-
-        // Requesting all the permissions in the manifest
         PermissionsManager.getInstance().requestAllManifestPermissionsIfNecessary(context.getCurrentActivity(), new PermissionsResultAction() {
             @Override
             public void onGranted() {
@@ -73,10 +46,34 @@ public class VideoRecorderManager extends SimpleViewManager<VideoRecorderBase> i
         boolean hasPermission = PermissionsManager.getInstance().hasPermission(context.getCurrentActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
         Log.d(TAG, "Has " + Manifest.permission.WRITE_EXTERNAL_STORAGE + " permission: " + hasPermission);
 
-        context.addLifecycleEventListener(this);
-        mView = new VideoRecorderView(context, mActivity);
+        final VideoRecorderBase mView = new VideoRecorderView(context.getBaseContext() , context.getCurrentActivity());
 
-        return  mView;
+        final LifecycleEventListener listener = new LifecycleEventListener() {
+            @Override
+            public void onHostResume() {
+                Log.d(TAG, "onHostResume");
+                mView.onResume();
+            }
+
+            @Override
+            public void onHostPause() {
+                Log.d(TAG, "onHostPause");
+                mView.onPause();
+            }
+
+            @Override
+            public void onHostDestroy() {
+                Log.d(TAG, "onHostDestroy");
+                /*if (listener != null && context != null) {
+                    context.removeLifecycleEventListener(listener);
+                    listener = null;
+                }*/
+            }
+        };
+        context.addLifecycleEventListener(listener);
+
+
+        return mView;
 
     }
 

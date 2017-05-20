@@ -1,33 +1,56 @@
-//  Created by react-native-create-bridge
+import React, { Component, PropTypes } from 'react';
+import ReactNative, {
+  requireNativeComponent,
+  UIManager,
+  StyleSheet,
+} from 'react-native';
 
-import React, { Component } from 'react'
-import { requireNativeComponent } from 'react-native'
+const NVideoRecorder = requireNativeComponent('VideoRecorder', VideoRecorder, {});
 
-const VideoRecorder = requireNativeComponent('VideoRecorder', null)
+const styles = StyleSheet.create({
+  camera: {
+    //flex: 1,
+  }
+});
 
-class VideoRecorderView extends Component {
-  render () {
-    return <VideoRecorder {...this.props} />
+export default class VideoRecorder extends Component {
+  stop() {
+    UIManager.dispatchViewManagerCommand(
+      this.getNodeHandle(),
+      UIManager.VideoRecorder.Commands.stop,
+      null
+    );
+  }
+
+  record() {
+    UIManager.dispatchViewManagerCommand(
+      this.getNodeHandle(),
+      UIManager.VideoRecorder.Commands.record,
+      null
+    );
+  }
+
+  getNodeHandle() {
+    return ReactNative.findNodeHandle(this.refs.recorder);
+  }
+
+  render() {
+    return (
+      <NVideoRecorder
+        {...this.props}
+        ref="recorder"
+        style={[styles.camera, this.props.style]}
+      />
+    );
   }
 }
 
-VideoRecorderView.propTypes = {
-  exampleProp: React.PropTypes.any
-}
-
-export default VideoRecorderView
-
-
-
-/*import { PropTypes } from 'react';  
-import { requireNativeComponent, View } from 'react-native';
-
-var iface = {  
-    name: 'Camera2View',
-    PropTypes: {
-          exampleProp: PropTypes.string,
-          ...View.propTypes // include the default view properties
-    }
-}
-
-module.exports = requireNativeComponent('Camera2', iface); */
+VideoRecorder.propTypes = {
+  onRecordingStarted: PropTypes.func,
+  onRecordingFinished: PropTypes.func,
+  onCameraAccessException: PropTypes.func,
+  onCameraFailed: PropTypes.func,
+  type: PropTypes.oneOf(['front', 'back']),
+  videoEncodingBitrate: PropTypes.number,
+  videoEncodingFrameRate: PropTypes.number
+};

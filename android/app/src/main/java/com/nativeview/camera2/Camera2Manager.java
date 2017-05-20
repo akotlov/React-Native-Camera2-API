@@ -9,9 +9,14 @@ import android.view.View;
 import com.anthonycr.grant.PermissionsManager;
 import com.anthonycr.grant.PermissionsResultAction;
 import com.facebook.react.bridge.LifecycleEventListener;
+import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
+
+import java.util.Map;
+
+import javax.annotation.Nullable;
 
 
 public class Camera2Manager extends SimpleViewManager<Camera2VideoView>  {
@@ -45,7 +50,8 @@ public class Camera2Manager extends SimpleViewManager<Camera2VideoView>  {
     @Override
     public Camera2VideoView createViewInstance(ThemedReactContext context){
 
-        final Camera2VideoView view = new Camera2VideoView(context.getBaseContext() , context.getCurrentActivity());
+        final Camera2VideoView view = new Camera2VideoView(context ,context.getCurrentActivity());
+        //final Camera2VideoView view = new Camera2VideoView(context.getBaseContext() ,context.getCurrentActivity());
 
         final LifecycleEventListener listener = new LifecycleEventListener() {
             @Override
@@ -108,6 +114,16 @@ public class Camera2Manager extends SimpleViewManager<Camera2VideoView>  {
 
     }
 
+    @Override
+    public @Nullable Map getExportedCustomDirectEventTypeConstants() {
+        return MapBuilder.of(
+                "recordingStart", MapBuilder.of("registrationName", "onRecordingStarted"),
+                "recordingFinish", MapBuilder.of("registrationName", "onRecordingFinished")
+                //"cameraAccessException", MapBuilder.of("registrationName", "onCameraAccessException"),
+                //"cameraFailed", MapBuilder.of("registrationName", "cameraFailed")
+        );
+    }
+
     @ReactProp(name = "exampleProp")
     public void setExampleProp(View view, String prop) {
         // Set properties from React onto your native component
@@ -136,5 +152,25 @@ public synchronized  void doDestroy() {
         }
         onDestroy();
     }
+
+ */
+
+//Changes:
+/*
+removed android:layout_below="@id/texture" from main.xml.Seems like RN view hierarchy "overrides" Android hierarhy.
+
+
+
+
+NOTES:
+Since an activity can only use a single View as content view, it is common to use a ViewGroup as content view.
+A ViewGroup is a subclass of View. A ViewGroup can contain multiple View inside it, so using a ViewGroup as content
+view enables your view to consist of multiple View instances.
+
+All Views have four constructors (it is depends of a API Level) and all have public access But all of them have
+specific goal and specification where should be used
+
+
+
 
  */

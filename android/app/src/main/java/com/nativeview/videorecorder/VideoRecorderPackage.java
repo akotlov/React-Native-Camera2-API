@@ -30,7 +30,7 @@ public class VideoRecorderPackage implements ReactPackage {
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
         // Register your native component's view manager
         return Arrays.<ViewManager>asList(
-           new VideoRecorderManager(reactContext.getCurrentActivity())
+           new VideoRecorderManager()
         );
     }
 }

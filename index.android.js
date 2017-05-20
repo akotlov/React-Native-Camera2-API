@@ -15,21 +15,51 @@ import {
   ViewPagerAndroid
 } from 'react-native';
 
+//import MessageQueue from 'react-native/Libraries/BatchedBridge/MessageQueue'
+//       MessageQueue.spy(true); 
+
 import { ViewPagerScrollState } from 'ViewPagerAndroid';
 
 import Camera2View from './Camera2/Camera2NativeView'
 import TestView from './Test/TestNativeView'
-import VideoRecorderView from './VideoRecorder/VideoRecorder'
+import VideoRecorder from './VideoRecorder/VideoRecorder'
 
 export default class NativeView extends Component {
+  constructor(props) {
+    super(props)
+    console.log(this)
+  }
+
+    _onFinish = (path) => {
+      console.log("PATH: ",path)
+    }
+  
   render() {
     return (
       <View style={styles.container}>
 
-       
-                <Camera2View style={{ flex: 1 }} />
-    
+        <ViewPagerAndroid
+          style={styles.viewPager}
+          initialPage={1}
+          pageMargin={0}
+          keyboardDismissMode={'on-drag'}
+          ref={viewPager => { this.viewPager = viewPager; }}>
+      
+       <View style={styles.containerOne}>
+         <TouchableOpacity style={styles.topButton}>
+                    <Button onPress={() => {}} title='One' style={{}} />
+            </TouchableOpacity>
+         </View>
 
+          <View style={styles.containerTwo}>
+            <Camera2View style={{ flex: 1}} onFinish={this._onFinish} />
+            </View>
+            <View style={styles.containerTwo}>
+              <TouchableOpacity style={styles.topButton}>
+                    <Button onPress={() => {}} title='Three' style={{}} />
+            </TouchableOpacity>
+            </View>
+      </ViewPagerAndroid>
       </View>
     );
   }
@@ -77,7 +107,7 @@ AppRegistry.registerComponent('NativeView', () => NativeView);
 
 
 /*
-        <Camera2View style={styles.preview}/>
+<Camera2View style={{ flex: 1}} onFinish={this._onFinish} />
 */
 
 

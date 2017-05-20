@@ -60,7 +60,17 @@ public class VideoRecorderView extends VideoRecorderBase {
     }
 
     private Activity mActivity;
+
     private boolean mSurfaceTextureIsAvailable = false;
+
+    public VideoRecorderView(Context context, Activity activity) {
+        super(context);
+        mActivity = activity;
+        setSurfaceTextureListener(mSurfaceTextureListener);
+        Log.d(TAG, "Constructor");
+
+    }
+
     private TextureView.SurfaceTextureListener mSurfaceTextureListener
             = new TextureView.SurfaceTextureListener() {
 
@@ -86,17 +96,12 @@ public class VideoRecorderView extends VideoRecorderBase {
         }
     };
 
-    public VideoRecorderView(Context context, Activity activity) {
-        super(context);
-        mActivity = activity;
-        setSurfaceTextureListener(mSurfaceTextureListener);
-        Log.d(TAG, "Constructor");
 
-    }
 
 
     private HandlerThread mBackgroundThread;
     private Surface mRecorderSurface;
+
     private boolean mIsRecordingVideo = false;
     private String mNextVideoAbsolutePath;
     private int mFacing = CameraCharacteristics.LENS_FACING_BACK;
@@ -124,6 +129,7 @@ public class VideoRecorderView extends VideoRecorderBase {
     }
 
     private Semaphore mCameraOpenCloseLock = new Semaphore(1);
+
     private String mCameraId;
     private Integer mSensorOrientation;
     private Size mVideoSize;
@@ -131,6 +137,7 @@ public class VideoRecorderView extends VideoRecorderBase {
     private MediaRecorder mMediaRecorder;
     private CameraDevice mCameraDevice;
     private VideoRecorderBase mBase = this;
+
     private CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(CameraDevice camera) {
@@ -248,6 +255,7 @@ public class VideoRecorderView extends VideoRecorderBase {
         this.setTransform(matrix);
     }
 
+
     private void openCamera(int width, int height) {
         // TODO: Add M permission support
         if (mActivity == null || mActivity.isFinishing()) {
@@ -275,6 +283,9 @@ public class VideoRecorderView extends VideoRecorderBase {
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
             mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
+            //mVideoSize = new Size(1280, 720);
+
+            Log.d(TAG, "openCamera() mVideoSize:" + mVideoSize.toString());
             mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
                     width, height, mVideoSize);
             int orientation = mActivity.getResources().getConfiguration().orientation;
@@ -299,6 +310,7 @@ public class VideoRecorderView extends VideoRecorderBase {
         List<Size> bigEnough = new ArrayList<Size>();
         int w = aspectRation.getWidth();
         int h = aspectRation.getHeight();
+        Log.d(TAG, aspectRation.toString());
         for (Size option : choices) {
             if (option.getHeight() == option.getWidth() * h / w &&
                     option.getWidth() >= width && option.getHeight() >= height) {
@@ -316,13 +328,12 @@ public class VideoRecorderView extends VideoRecorderBase {
     private static Size chooseVideoSize(Size[] choices) {
         for (Size size : choices) {
             if (size.getWidth() == size.getHeight() * 4 / 3 && size.getWidth() <= 1080) {
+                Log.e(TAG, size.toString());
                 return size;
             }
         }
         return choices[choices.length - 1];
     }
-
-
 
     @Override
     void record() {
@@ -388,6 +399,7 @@ public class VideoRecorderView extends VideoRecorderBase {
         mMediaRecorder.setVideoEncodingBitRate(mVideoEncodingBitrate);
         mMediaRecorder.setVideoFrameRate(mVideoEncodingFrameRate);
         mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+
         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         int rotation = mActivity.getWindowManager().getDefaultDisplay().getRotation();
@@ -401,6 +413,8 @@ public class VideoRecorderView extends VideoRecorderBase {
         }
         mMediaRecorder.prepare();
     }
+
+
 
     @Override
     void stop() {
@@ -432,6 +446,7 @@ public class VideoRecorderView extends VideoRecorderBase {
 
     @Override
     void onPause() {
+        Log.d("MWIT", "onPause");
         closeCamera();
         stopBackgroundThread();
     }
